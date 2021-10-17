@@ -1,0 +1,443 @@
+DROP TABLE IF EXISTS names;
+CREATE TEMP TABLE names AS
+WITH input_data (iid, first_name, title) AS (
+ VALUES
+ (1, 'Kate', 'Datacated Visualizer'),
+ (2, 'Eric', 'Captain SQL'),
+ (3, 'Danny', 'Data Wizard Of Oz'),
+ (4, 'Ben', 'Mad Scientist'),
+ (5, 'Dave', 'Analytics Heretic'),
+ (6, 'Ken', 'The YouTuber')
+)
+SELECT * FROM input_data;
+
+DROP TABLE IF EXISTS jobs;
+CREATE TEMP TABLE jobs AS
+WITH input_data (iid, occupation, salary) AS (
+ VALUES
+ (1, 'Cleaner', 'High'),
+ (2, 'Janitor', 'Medium'),
+ (3, 'Monkey', 'Low'),
+ (6, 'Plumber', 'Ultra'),
+ (7, 'Hero', 'Plus Ultra')
+)
+SELECT * FROM input_data;
+
+--inner join
+SELECT
+  names.iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM names
+INNER JOIN jobs
+  ON names.iid = jobs.iid;
+  
+--select all
+SELECT
+  names.*,
+  jobs.*
+FROM names
+INNER JOIN jobs
+  ON names.iid = jobs.iid;
+  
+--left join
+SELECT
+  names.iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM names
+LEFT JOIN jobs
+  ON names.iid = jobs.iid;
+  
+--left join
+SELECT
+  jobs.iid,
+  jobs.occupation,
+  jobs.salary,
+  names.first_name,
+  names.title
+FROM jobs
+LEFT JOIN names
+  ON jobs.iid = names.iid;
+  
+--full join
+SELECT
+  names.iid AS name_id,
+  jobs.iid AS job_id,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM names
+FULL JOIN jobs
+  ON names.iid = jobs.iid;
+--alias
+SELECT
+  n.iid as name_iid,
+  j.iid as job_iid,
+  n.first_name,
+  n.title,
+  j.occupation,
+  j.salary
+FROM names AS n
+FULL JOIN jobs AS j
+  ON n.iid = j.iid;
+  
+--cross join
+SELECT
+  names.iid as name_iid,
+  jobs.iid as job_iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM names
+CROSS JOIN jobs;
+--alternative way of cross join
+SELECT
+  names.iid AS name_iid,
+  jobs.iid AS job_iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM names, jobs;
+
+-- Alternative Cross Inner Join Syntax
+SELECT
+  names.iid as name_iid,
+  jobs.iid as job_iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM names, jobs
+WHERE
+  names.iid = jobs.iid;
+  
+--Combining Manual Input
+WITH favorite_things (animal_name) AS (
+VALUES
+  ('Purple Elephant'),
+  ('Yellow Sea Cucumber'),
+  ('Turquoise Gorilla'),
+  ('Invisible Unicorn')
+)
+SELECT
+  first_name || ' Likes ' || animal_name || 's!' AS text_output
+FROM names, favorite_things
+WHERE first_name = 'Danny';
+
+--duplicates
+CREATE TEMP TABLE new_jobs AS
+WITH input_table (iid, occupation, salary) AS (
+ VALUES
+ (1, 'Cleaner', 'High'),
+ (1, 'Cleaner', 'Very High'),
+ (2, 'Janitor', 'Medium'),
+ (3, 'Monkey', 'Low'),
+ (3, 'Monkey', 'Very Low'),
+ (6, 'Plumber', 'Ultra'),
+ (7, 'Hero', 'Plus Ultra')
+)
+SELECT * FROM input_table;
+--inner join
+SELECT
+  names.iid,
+  names.first_name,
+  names.title,
+  new_jobs.occupation,
+  new_jobs.salary
+FROM names
+INNER JOIN new_jobs
+  ON names.iid = new_jobs.iid;
+  
+--another table
+SELECT
+  names.iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM names
+INNER JOIN jobs
+  ON names.iid = jobs.iid;
+  
+--duplicate left join
+SELECT
+  names.iid,
+  names.first_name,
+  names.title,
+  new_jobs.occupation,
+  new_jobs.salary
+FROM names
+LEFT JOIN new_jobs
+  ON names.iid = new_jobs.iid;
+
+--Original LEFT JOIN Output
+
+SELECT
+  names.iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM names
+LEFT JOIN jobs
+  ON names.iid = jobs.iid;
+  
+---A left semi join is actually really similar to an INNER JOIN where it captures only the matching records between left and right tables BUT it differs in one very key way: it only returns records from the left table - no columns or rows from the right table are included in the output.
+--where exist = left semi join
+SELECT
+  names.iid,
+  names.first_name
+FROM names
+WHERE EXISTS (
+  SELECT iid
+  FROM new_jobs
+  WHERE names.iid = new_jobs.iid
+);
+--other way
+SELECT
+  names.iid,
+  names.first_name
+FROM names
+WHERE EXISTS (
+  SELECT 1
+  FROM new_jobs
+  WHERE names.iid = new_jobs.iid
+);
+--Another way to think of this sort of join is in terms of a regular LEFT JOIN with a DISTINCT followed by a WHERE filter to remove all null values from the resulting joint dataset
+--alternative of semi left join
+SELECT DISTINCT
+  names.iid,
+  names.first_name
+FROM names
+LEFT JOIN new_jobs
+  ON names.iid = new_jobs.iid
+WHERE new_jobs.iid IS NOT NULL;
+
+--Left Semi Join Vs Inner Join
+SELECT DISTINCT
+  names.iid,
+  names.first_name
+FROM names
+INNER JOIN new_jobs
+  ON names.iid = new_jobs.iid;
+  
+--without distinct
+SELECT
+  names.iid,
+  names.first_name
+FROM names
+INNER JOIN new_jobs
+  ON names.iid = new_jobs.iid;
+  
+--anti join = where not exist
+--An ANTI JOIN is the opposite of a LEFT SEMI JOIN where only records from the left which do not appear on the right are returned 
+SELECT
+  names.iid,
+  names.first_name
+FROM names
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM new_jobs
+  WHERE names.iid = new_jobs.iid
+
+--an alternative way to represent a similar ANTI JOIN using a LEFT JOIN with a null WHERE filter
+SELECT
+  names.iid,
+  names.first_name
+FROM names
+LEFT JOIN new_jobs
+  ON names.iid = new_jobs.iid
+WHERE new_jobs.iid IS NULL;
+
+SELECT
+  names.iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM names
+LEFT JOIN new_jobs AS jobs  -- notice the aliases here!
+  ON names.iid = jobs.iid;
+  
+--Joining on Null Values
+DROP TABLE IF EXISTS null_names;
+CREATE TEMP TABLE null_names AS
+WITH input_data (iid, first_name, title) AS (
+ VALUES
+ (1,    'Kate',   'Datacated Visualizer'),
+ (2,    'Eric',   'Captain SQL'),
+ (3,    'Danny',  'Data Wizard Of Oz'),
+ (4,    'Ben',    'Mad Scientist'),
+ (5,    'Dave',   'Analytics Heretic'),
+ (6,    'Ken',    'The YouTuber'),
+ (null, 'Giorno', 'OG Data Gangster')
+)
+SELECT * FROM input_data;
+
+DROP TABLE IF EXISTS null_jobs;
+CREATE TEMP TABLE null_jobs AS
+WITH input_table (iid, occupation, salary) AS (
+ VALUES
+ (1,    'Cleaner',    'High'),
+ (1,    'Cleaner',    'Very High'),
+ (2,    'Janitor',    'Medium'),
+ (3,    'Monkey',     'Low'),
+ (3,    'Monkey',     'Very Low'),
+ (6,    'Plumber',    'Ultra'),
+ (7,    'Hero',       'Plus Ultra'),
+ (null, 'Mastermind', 'Bank')
+)
+SELECT * FROM input_table;
+
+--Inner Join,  NO - it does not join, null
+SELECT
+  names.iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM null_names AS names
+INNER JOIN null_jobs AS jobs
+  ON names.iid = jobs.iid;
+  
+--left join
+SELECT
+  names.iid,
+  names.first_name,
+  names.title,
+  jobs.occupation,
+  jobs.salary
+FROM null_names AS names
+LEFT JOIN null_jobs AS jobs
+  ON names.iid = jobs.iid;
+  
+-- null jobs as a base, it will join but does not show any value in right table so basically it will not join
+SELECT
+  jobs.iid,
+  jobs.occupation,
+  jobs.salary,
+  names.first_name,
+  names.title
+FROM null_jobs AS jobs
+LEFT JOIN null_names AS names
+  ON jobs.iid = names.iid;
+  
+--left semi join
+SELECT
+  null_names.*
+FROM null_names
+WHERE EXISTS (
+  SELECT iid
+  FROM null_jobs
+  WHERE null_names.iid = null_jobs.iid
+);
+
+--anti join
+SELECT
+  null_names.*
+FROM null_names
+WHERE NOT EXISTS (
+  SELECT iid
+  FROM null_jobs
+  WHERE null_names.iid = null_jobs.iid
+);
+
+--in and not in
+--Logically an IN is essentially doing what a WHERE EXISTS is doing - and NOT IN is equivalent to an ANTI JOIN
+--IN instead of WHERE EXISTS
+SELECT
+  null_names.*
+FROM null_names
+WHERE null_names.iid IN (
+  SELECT iid
+  FROM null_jobs
+);
+
+--NOT IN instead of WHERE NOT EXISTS
+SELECT
+  null_names.*
+FROM null_names
+WHERE null_names.iid NOT IN (
+  SELECT
+    iid
+  FROM null_jobs
+);
+
+-- if we manually add iid's
+SELECT
+  null_names.*
+FROM null_names
+WHERE null_names.iid NOT IN (
+  1, 1, 2, 3, 3, 6, 7
+);
+--What happens if we add that null value back in?, no output
+
+SELECT
+  null_names.*
+FROM null_names
+WHERE null_names.iid NOT IN (
+  1, 1, 2, 3, 3, 6, 7, null
+);
+
+--Set Operations
+--There are 3 distinct set operations used to combine results from 2 or more SELECT statements.
+
+--UNION (& UNION ALL)
+--INTERSECT
+--EXCEPT
+--These 3 methods are pretty straightforward however as it matches directly with set notation, 
+--however the only condition is that all of the SELECT result sets must have columns with the 
+--same data types - the column names have no impact.
+
+SELECT * FROM names where first_name = 'Danny'
+UNION
+SELECT * FROM names where first_name = 'Kate';
+
+--UNION runs a DISTINCT on the output result whilst UNION ALL does not.
+--This means that UNION ALL will be more performant as it does not run a relatively expensive DISTINCT
+SELECT * FROM names where first_name = 'Danny'
+UNION
+SELECT * FROM names where first_name = 'Danny';
+
+SELECT * FROM names where first_name = 'Danny'
+UNION ALL
+SELECT * FROM names where first_name = 'Danny';
+  
+--Intersect is pretty straightforward in that only the records which exist in both tables will be returned - a little bit similar to an INNER JOIN
+SELECT * FROM names
+INTERSECT
+SELECT * FROM names where LEFT(first_name, 1) = 'K';
+--Except is the equivalent of the ANTI JOIN in set notation
+SELECT * FROM names
+EXCEPT
+SELECT * FROM names where LEFT(first_name, 1) = 'K';
+
+--Multiple Combinations
+SELECT * FROM names WHERE first_name = 'Danny'
+UNION
+SELECT * FROM names where LEFT(first_name, 1) = 'K'
+EXCEPT
+SELECT * FROM names where first_name = 'Kate';
+
+--each UNION query must have the same number of columns
+--Use LEFT JOIN when you need to keep all rows on the left table but want to join on additional records from the right table
+--Be wary of which table is on the left vs right side of the LEFT JOIN as all left table records will be retained regardless of the join condition
+--Use INNER JOIN when you need the intersection of both left and right tables and you also need to access columns from the right table
+--Use FULL OUTER JOIN or FULL JOIN when you need to combine both left and right tables completely (similar to a UNION ALL operation without deduplication)
+--Use CROSS JOIN when you need the cartesian product or the complete combinations of left and right tables
+--Be careful of duplicate join keys from left and right tables when using LEFT and INNER and CROSS joins
+--Use LEFT SEMI JOIN or WHERE EXISTS when you only need to keep records from the left table that exist in the right table
+--Use ANTI JOIN when you need to remove exclude records from the left table based off the right table
+--Use UNION to get the deduplicated or distinct combination of two tables or SQL query outputs - column positions and data types must align!
+--Use UNION all to get the unduplicated combination of two tables or SQL query outputs - column positions and data types must align!
+--Use INTERSECT and EXCEPT for set operations between tables or SQL query outputs - column positions and data types must align!
+-- =, >=, <=, >, < or BETWEEN conditions can be used for the ON clause for table joins
+--Use aliases and/or explicit references when joining tables and selecting columns to improve readability and comprehension of code, especially when joining multiple tables in one SQL statement
