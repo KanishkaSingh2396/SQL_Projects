@@ -1,2 +1,2 @@
 # SQL_Projects
-SQL_Files
+SQL_Notes
